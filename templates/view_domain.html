@@ -1,0 +1,185 @@
+{% import "macros.html" as macros %}
+{% extends "base.html" %}
+{% block body %}
+<script type="text/javascript">
+$(document).ready(function() {
+    $('a#status').click(function() {
+        $('#loading').removeClass('hidden');
+    });
+    $('a#whois-lookup').click(function() {
+        $('#loading').removeClass('hidden');
+    });
+    $('[data-toggle="tooltip"]').tooltip();    
+});
+</script>
+<ol class="breadcrumb">
+    <li><a href="{{ url_for('home') }}">Domains</a></li>
+    {% if request.query_string == 'expirations=show' -%}
+    <li><a href="{{ url_for('home', expirations='show') }}">Expirations</a></li>
+    {%- endif %}
+    <li class="active">{{ domain.domain_name }}</li>
+</ol>
+{{ macros.render_flash_message(messages) }}
+<h2 class="text">{{ domain.domain_name }}
+<div class="dropdown pull-right">
+    <img class="hidden" id="loading" src="{{ url_for('static', filename='image/loading.gif') }}" />
+    <button class="btn btn-default dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-expanded="true">
+    Actions
+    <span class="caret"></span>
+    </button>
+    <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu1">
+        <li role="presentation">
+            <a role="menuitem" tabindex="-1" id="status" href="{{ url_for('view_domain_action', domain_name=domain.domain_name, action='status') }}">
+                <span class="glyphicon glyphicon-th-list"></span>&nbsp; Update Status
+            </a>
+        </li>
+        <li role="presentation">
+            <a role="menuitem" tabindex="-1" id="whois-lookup" href="{{ url_for('view_domain_action', domain_name=domain.domain_name, action='whois') }}">
+                <span class="glyphicon glyphicon-question-sign"></span>&nbsp; Whois Lookup
+            </a>
+        </li>
+        <li role="presentation" class="divider"></li>
+        <li role="presentation">
+            <a role="menutitem" tabindex"-1" id="cancelled" href="{{ url_for('view_domain_action', domain_name=domain.domain_name, action='cancelled') }}">
+                <span class="glyphicon glyphicon-remove-circle"></span>&nbsp; Cancel Domain
+            </a>
+        </li>
+    </ul>
+    <a role="button" type="button" class="btn btn-primary" href="{{ url_for('edit_domain', domain_name=domain.domain_name) }}">Edit</a>
+</div>
+ </h2>
+<hr />
+<div class="container-fluid domain-container">
+    <div class="col-md-5">
+        <form role="form" class="form-horizontal">
+            <div class="form-group">
+                <label for="category" class="col-sm-4 control-label">Category</label>
+                <div class="col-sm-8">
+                    <p class="form-control-static" id="category" name="category">{{ domain.category.category_name.name }}</p>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="domain-name" class="col-sm-4 control-label">Domain Name</label>
+                <div class="col-sm-8">
+                    <p class="form-control-static" id="domain-name" name="domain-name">{{ domain.domain_name }}</p>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="ip-address" class="col-sm-4 control-label">IP Address</label>
+                <div class="col-sm-8">
+                    <p class="form-control-static" id="ip-address" name="ip-address">{{ domain.ip }}</p>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="provider-url" class="col-sm-4 control-label">Provider URL</label>
+                <div class="col-sm-8">
+                    <p class="form-control-static" id="provider-url" name="provider-url">{{ domain.provider.provider_url }}</p>
+                </div>
+            </div>
+            {% if expiration.past %}
+            <div class="form-group alert alert-danger" data-toggle="tooltip" title="Domain has expired">
+            {% elif expiration.week %}
+            <div class="form-group alert alert-danger" data-toggle="tooltip" title="Domain expires in less 7 days">
+            {% elif expiration.month %}
+            <div class="form-group alert alert-warning" data-toggle="tooltip" title="Domain expires in less than 30 days">
+            {% else %}
+            <div class="form-group">
+            {% endif %}
+                <label for="exp-date" class="col-sm-4 control-label">Expiration Date</label>
+                <div class="col-sm-8">
+                    <p class="form-control-static" id="exp-date" name="exp-date">
+                        {{ domain.exp_date }}
+                        {% if expiration.past %}
+                        &nbsp;<span class="glyphicon glyphicon-remove-sign"></span>
+                        {% elif expiration.week %}
+                        &nbsp;<span class="glyphicon glyphicon-exclamation-sign"></span>
+                        {% elif expiration.month %}
+                        &nbsp;<span class="glyphicon glyphicon-info-sign"></span>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="is-active" class="col-sm-4 control-label">Active <span class="glyphicon glyphicon-ok"></span></label>
+                <div class="col-sm-8 checkbox">
+                    <label>
+                        <input type="checkbox" {% if domain.is_active %}checked="checked"{% endif %}disabled>
+                    <label>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="is-monitored" class="col-sm-4 control-label">Monitored <span class="glyphicon glyphicon-search"></span></label>
+                <div class="col-sm-8 checkbox">
+                    <label>
+                        <input type="checkbox" {% if domain.is_monitored %}checked="checked"{% endif %}disabled>
+                    </label>
+                </div>
+            </div>
+        </form>
+        <!-- Status Panel -->
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <div class="panel-title"><span class="glyphicon glyphicon-th-list"></span>&nbsp; Status History<small><p class="text text-muted pull-right">Showing last 5 events</p></small></div>
+            </div>
+            <table class="table table-hover table-condensed">
+                <thead>
+                    <tr>
+                        <th>Status Time</th>
+                        <th>Status Type </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set count = 0 %}
+                    {% for status in domain.status | sort(attribute="status_time", reverse=True) %}
+                    {% if count != 5 %}
+                    {{ macros.render_status(status) }}
+                    {% endif %}
+                    {% set count = count + 1 %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <!-- /Status Panel -->
+    </div> <!-- /col-md-5 -->
+
+    <div class="col-md-7">
+        <h3 class="text text-muted">
+            <small><span class="glyphicon glyphicon-question-sign"></span></small> Whois Information<small>
+            <p class="text text-muted pull-right">{{ domain.whois_info.lookup_time | dateformat("%m/%d/%Y %X") }}</small>
+        </h3>
+        {% if domain.whois_info.text -%}
+        <pre>{{ domain.whois_info.text }}</pre>
+        {% else -%}
+        <pre>No whois information found for {{ domain.domain_name }}. </pre>
+        {%- endif %}
+    </div>
+
+</div> <!-- /container-fluid -->
+<hr />
+<nav>
+    <ul class="pager">
+        <li class="previous {% if previous_domain == domain_name %}disabled{% endif %}">
+            {% if request.query_string == "expirations=show" %}
+            <a href="{% if previous_domain != domain_name %}{{ url_for('view_domain', domain_name=previous_domain, expirations='show') }}{% else %}#{% endif %}">
+                <span aria-hidden="true">&larr;</span> Previous
+            </a>
+            {% else %}
+            <a href="{% if previous_domain != domain_name %}{{ url_for('view_domain', domain_name=previous_domain) }}{% else %}#{% endif %}">
+                <span aria-hidden="true">&larr;</span> Previous
+            </a>
+            {% endif %}
+        </li>
+        <li class="next {% if next_domain == domain_name %}disabled{% endif %}">
+            {% if request.query_string == "expirations=show" %}
+            <a href="{% if next_domain != domain_name %}{{ url_for('view_domain', domain_name=next_domain, expirations='show') }}{% else %}#{% endif %}">
+                Next <span aria-hidden="true">&rarr;</span>
+            </a>
+            {% else %}
+            <a href="{% if next_domain != domain_name %}{{ url_for('view_domain', domain_name=next_domain) }}{% else %}#{% endif %}">
+                Next <span aria-hidden="true">&rarr;</span>
+            </a>
+            {% endif %}
+        </li>
+    </ul>
+</nav>
+{% endblock %}

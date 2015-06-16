@@ -1,0 +1,109 @@
+{% import "macros.html" as macros %}
+{% extends "base.html" %}
+{% block body %}
+
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/dataTables.bootstrap.css') }}">
+<script type="text/javascript" language="javascript" src="{{ url_for('static', filename='js/jquery.dataTables.min.js') }}"></script>
+<script type="text/javascript" language="javascript" src="{{ url_for('static', filename='js/dataTables.bootstrap.js') }}"></script>
+<script type="text/javascript">
+$(document).ready(function() {
+    $("#domains-panel").click(function() {
+        window.location = "{{ url_for('home') }}";
+    });
+    $("#expirations-panel").click(function() {
+        window.location = "{{ url_for('home', expirations='show') }}";
+    });
+    $("#issues-panel").click(function() {
+        window.location = "{{ url_for('home', issues='show') }}";
+    });
+    $('#domain-table').dataTable({
+        "lengthMenu": [ [15, 45, 100, -1], [15, 45, 100, "All"] ],
+        "order": []
+    });
+    $('[data-toggle="tooltip"]').tooltip();    
+});
+</script>
+
+<div class="row">
+    <!-- Domains panel -->
+    <div class="col-md-4 home-panel" id="domains-panel">
+        <div class="panel panel-primary">
+            <div class="panel-heading">
+
+                <div class="row">
+                    <div class="col-xs-3">
+                        <span class="glyphicon glyphicon-globe glyphicon-large"></span>
+                    </div>
+                    <div class="col-xs-9 text-right">
+                        <div class="panel-heading-count">{% if domains_count %}{{ domains_count }}{% else %}0{% endif %}</div>
+                        <div class="panel-heading-header">Domains</div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <!-- Expirations panel -->
+    <div class="col-md-4 home-panel" id="expirations-panel">
+        <div class="panel{% if domains_expirations %} panel-warning{% else %} panel-default{% endif %}">
+            <div class="panel-heading">
+
+                <div class="row{% if not domains_expirations %} text-muted{% endif %}">
+                    <div class="col-xs-3">
+                        <span class="glyphicon glyphicon-time glyphicon-large"></span>
+                    </div>
+                    <div class="col-xs-9 text-right">
+                        <div class="panel-heading-count">{% if domains_expirations %}{{ domains_expirations | count }}{% else %}0{% endif %}</div>
+                        <div class="panel-heading-header">Expirations</div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <!-- Issues panel -->
+    <div class="col-md-4 home-panel" id="issues-panel">
+        <div class="panel{% if domains_issues %} panel-danger{% else %} panel-default{% endif %}">
+            <div class="panel-heading">
+
+                <div class="row{% if not domains_issues %} text-muted{% endif %}">
+                    <div class="col-xs-3">
+                        <span class="glyphicon glyphicon-pushpin glyphicon-large"></span>
+                    </div>
+                    <div class="col-xs-9 text-right">
+                        <div class="panel-heading-count">{% if domains_issues %}{{ domains_issues | count }}{% else %}0{% endif %}</div>
+                        <div class="panel-heading-header">Issues</div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div> <!-- /.row -->
+
+{{ macros.render_flash_message(messages) }}
+
+<hr />
+
+<table id="domain-table" class="table table-hover table-striped table-condensed">
+    <thead>
+        <tr>
+            <th>Category</th>
+            <th>Domain Name</th>
+            <th>IP Address</th>
+            <th>Provider</th>
+            <th>Expires</th>
+            <th>Status</th>
+	    <th>Status Time</th>
+            <th></th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for domain in domains %}
+        {% set expiration = expirations[domain.domain_name] %}
+        {{ macros.render_domain(domain, expiration) }}
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

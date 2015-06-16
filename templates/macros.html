@@ -1,0 +1,106 @@
+{% macro render_domain(domain, expiration) %}
+
+{% if domain.status %}
+{% set status_type = domain.status[-1].status_type %}
+{% set status_time = domain.status[-1].status_time %}
+{% else %}
+{% set status_type = "" %}
+{% endif %}
+
+<tr>
+    <td>{% if domain.category.category_name.name != "unassigned" %}{{ domain.category.category_name.name }}{% endif %}</td>
+    {% if request.query_string == 'expirations=show' %}
+    <td><a href="{{ url_for('view_domain', domain_name=domain.domain_name, expirations='show') }}">{{ domain.domain_name }}</a></td>
+    {% else %}
+    <td><a href="{{ url_for('view_domain', domain_name=domain.domain_name) }}">{{ domain.domain_name }}</a></td>
+    {% endif %}
+    <td>{{ domain.ip }}</td>
+    <td>{{ domain.provider.provider_url }}</td>
+    {% if expiration.past %}
+    <td>{{ domain.exp_date }} &nbsp;<span class="glyphicon glyphicon-remove-sign text text-danger" data-toggle="tooltip" title="Domain has expired"></span></td>
+    {% elif expiration.week %}
+    <td>{{ domain.exp_date }} &nbsp;<span class="glyphicon glyphicon-exclamation-sign text text-danger" data-toggle="tooltip" title="Less than 7 days until expiration"></span></td>
+    {% elif expiration.month %}
+    <td>{{ domain.exp_date }} &nbsp;<span class="glyphicon glyphicon-info-sign text text-warning" data-toggle="tooltip" title="Less than 30 days until expiration"></span></td>
+    {% else %}
+        {% set exp_date = domain.exp_date | dateformat("%Y-%m-%d") %}
+        {% if exp_date == "2020-01-01" %}
+        <td></td>
+        {% else %}
+        <td>{{ domain.exp_date }}</td>
+        {% endif %}
+    {% endif %}
+
+    {% if status_type == "success" %}
+    {% set label = "success" %}
+    {% elif status_type == "failed" or status_type.startswith("mismatch") %}
+    {% set label = "danger" %}
+    {% elif status_type == "added" %}
+    {% set label = "info" %}
+    {% else %}
+    {% set label = "default" %}
+    {% endif %}
+    <td>
+        <span class="label label-{{ label }}">{{ status_type.title() }}</span>
+    </td>
+    <td>
+        {{ status_time | dateformat("%m/%d/%Y %H:%M") }}
+    </td>
+    <td>
+        {% if domain.is_active %}
+        <span class="glyphicon glyphicon-ok" data-toggle="tooltip" title="Domain is active">
+        {% endif %}
+    </td>
+    <td>
+        {% if domain.is_monitored %}
+        <span class="glyphicon glyphicon-search" data-toggle="tooltip" title="Monitored flag is set"></span>
+        {% endif %}
+    </td>
+</tr>
+{% endmacro %}
+
+
+{% macro render_status(status) %}
+{% if status.status_type == "success" %}
+{% set label = "success" %}
+{% elif status.status_type == "failed" or status.status_type.startswith("mismatch") %}
+{% set label = "danger" %}
+{% elif status.status_type == "added" %}
+{% set label = "info" %}
+{% else %}
+{% set label = "default" %}
+{% endif %}
+{% if status %}
+<tr>
+    <td>{{ status.status_time | dateformat("%m/%d/%Y %X") }}</td>
+    <td><span class="label label-{{ label }}">{{ status.status_type.title() }}</span></td>
+</tr>
+{% endif %}
+{% endmacro %}
+
+
+{% macro render_flash_message(messages) %}
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<div class="alert alert-{{ category }} alert-dismissible" role="alert">
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+    {{ message | safe }}
+</div>
+{% endfor %}
+{% endif %}
+{% endwith %}
+{% endmacro %}
+
+
+{% macro render_category_names_form_select(category_names, selected_category_name) %}
+<select class="form-control" id="category" name="category">
+{% for category_name in category_names %}
+    {% if category_name == selected_category_name %}
+    <option selected>{{ category_name }}</option>
+    {% else %}
+    <option>{{ category_name }}</option>
+    {% endif %}
+{% endfor %}
+</select>
+{% endmacro %}

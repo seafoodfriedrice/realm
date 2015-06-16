@@ -1,0 +1,99 @@
+{% import "macros.html" as macros %}
+{% extends "base.html" %}
+{% block body %}
+<ol class="breadcrumb">
+    <li><a href="{{ url_for('home') }}">Domains</a></li>
+    <li><a href="{{ url_for('view_domain', domain_name=domain.domain_name) }}">{{ domain.domain_name }}</a></li>
+    <li class="active">Edit</li>
+</ol>
+{{ macros.render_flash_message(messages) }}
+<h2>{{ domain.domain_name }} <small>Edit</small></h2>
+<hr />
+<div class="container-fluid domain-container">
+
+    <form role="form" method="POST" class="form-horizontal">
+        <div class="form-group">
+            <label for="category" class="col-sm-2 control-label">Category</label>
+            <div class="col-sm-2">
+                {{ macros.render_category_names_form_select(category_names, domain.category.category_name.name) }}
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="domain-name" class="col-sm-2 control-label">Domain Name</label>
+            <div class="col-sm-4">
+                <input type="text" class="form-control" id="domain-name" name="domain-name" value="{{ domain.domain_name }}" required>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="ip-address" class="col-sm-2 control-label">IP Address</label>
+            <div class="col-sm-3">
+                <input type="text" class="form-control" id="ip-address" name="ip-address" value="{{ domain.ip }}" required>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="provider-url" class="col-sm-2 control-label">Provider URL</label>
+            <div class="col-sm-4">
+                <input type="text" class="form-control" id="provider-url" name="provider-url" value="{{ domain.provider.provider_url }}" required>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="exp-date" class="col-sm-2 control-label">Expiration Date</label>
+            <div class="col-sm-2">
+                <div class='input-group' id='exp-calendar'>
+                    <input type='text' name="exp-date" class="form-control" value="{{ domain.exp_date }}">
+                    <span class="input-group-addon">
+                        <span class="glyphicon glyphicon-calendar"></span>
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="is-active" class="col-sm-2 control-label">Active <span class="glyphicon glyphicon-ok"></span></label>
+            <div class="col-sm-4 checkbox">
+                <label>
+                    <input type="checkbox" id="is-active" name="is-active" {% if domain.is_active %}checked="checked"{% endif %}>
+                <label>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="is-monitored" class="col-sm-2 control-label">Monitored <span class="glyphicon glyphicon-search"></span></label>
+            <div class="col-sm-4 checkbox">
+                <label>
+                    <input type="checkbox" id="is-monitored" name="is-monitored" {% if domain.is_monitored %}checked="checked"{% endif %}>
+                </label>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-sm-offset-2 col-sm-4">
+                <a href="{{ url_for('view_domain', domain_name=domain.domain_name) }}" type="button" class="btn btn-default">Cancel</a>
+                <button type="submit" name="submit" class="btn btn-primary" value="Save">Save</button>
+                <button type="submit" name="submit" class="btn btn-primary" value="Continue">Continue</button>
+            </div>
+        </div>
+    </form>
+
+</div> <!-- /container-fluid -->
+<hr />
+<nav>
+    <ul class="pager">
+        <li class="previous {% if previous_domain == domain_name %}disabled{% endif %}">
+            <a href="{% if previous_domain != domain_name %}{{ url_for('edit_domain', domain_name=previous_domain) }}{% else %}#{% endif %}">
+                <span aria-hidden="true">&larr;</span> Previous
+            </a>
+        </li>
+        <li class="next {% if next_domain == domain_name %}disabled{% endif %}">
+            <a href="{% if next_domain != domain_name %}{{ url_for('edit_domain', domain_name=next_domain) }}{% else %}#{% endif %}">
+                Next <span aria-hidden="true">&rarr;</span>
+            </a>
+        </li>
+    </ul>
+</nav>
+<script type="text/javascript">
+    $(function () {
+        $('#exp-calendar').datetimepicker({
+            format: 'YYYY-MM-DD',
+            viewMode: 'years'
+        });
+    });
+</script>
+{% endblock %}
