@@ -9,8 +9,10 @@ from datetime import datetime
 from realm import app
 from realm.database import session
 from realm.models import Domain, Status, Category, CategoryName, WhoisInfo
+from realm.decorators import http_basic_auth
 
 @app.route("/api/domains", methods=["GET"])
+@http_basic_auth
 def domains_get():
     """ Retrieve full list of domains """
     domains = session.query(Domain).all()
@@ -53,6 +55,7 @@ def parse_url(url):
         return url.path
 
 @app.route("/api/domains/<domain_name>", methods=["GET", "POST", "PUT"])
+@http_basic_auth
 def domain(domain_name):
     # Get JSON for individual domain when
     # using GET method
